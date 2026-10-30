@@ -61,3 +61,38 @@ const pdf=createOverallPdf(report,jsPDF);assert.equal(pdf.getNumberOfPages(),8);
 assert(vm.runInContext('teamTallyView()',context).includes('Club 5'));
 fs.mkdirSync(new URL('../tmp/pdfs/',import.meta.url),{recursive:true});pdf.save(fileURLToPath(new URL('../tmp/pdfs/overall-awards-test.pdf',import.meta.url)));
 console.log('PASS: 838 entries; all 175 elimination brackets can finish; 30 scored categories; mixed ring G routing; eight award groups; both Poomsae formats, pairs and teams; gender filters, shared ranks, and eight-page trophy PDF.');
+
+// Weight labels add the supplied kg limit while retaining the original division,
+// gender, class, raw category and round labels on every existing bout surface.
+for (const [category,expected] of [
+  ['9 - 11 JUNIOR MFIN','FIN · -20 kg'],['9 - 11 JUNIOR FFLY','FLY · -21 kg'],
+  ['9 - 11 SENIOR MHEAVY','HEAVY · >40 kg'],['9 - 11 SENIOR FHEAVY','HEAVY · >38 kg'],
+  ['12 - 14 JUNIOR FLIGHT MIDDLE','LIGHT MIDDLE · -51 kg'],
+  ['12 - 14 SENIOR MLIGHT MIDDLE','LIGHT MIDDLE · -57 kg'],
+  ['12 - 14 SENIOR FLIGHT HEAVY','LIGHT HEAVY · -59 kg'],
+  ['12 - 14 SENIOR MHEAVY','HEAVY · >65 kg'],
+  ['15 - 17 SENIOR MFIN','FIN · -45 kg'],['15 - 17 SENIOR FLIGHT MIDDLE','LIGHT MIDDLE · -59 kg'],
+  ['15 - 17 SENIOR MHEAVY','HEAVY · >78 kg'],['15 - 17 SENIOR FHEAVY','HEAVY · >68 kg'],
+]) {
+  context.weightBout={...blank[0],event:'KYORUGI',category};
+  assert.equal(vm.runInContext('kyorugiCategoryDetails(weightBout)[2]',context),expected);
+}
+const seededCategories=[...new Set(rows.filter(r=>r.event==='KYORUGI').map(r=>r.category))];
+assert.equal(seededCategories.length,81);
+for (const category of seededCategories) {
+  context.weightBout={event:'KYORUGI',category};
+  const details=vm.runInContext('kyorugiCategoryDetails(weightBout)',context);
+  assert.match(details[2],/ · (?:-\d+|>\d+) kg$/,category);
+  assert(details[2].startsWith(category.match(/[MF]([A-Z ]+)$/)[1]+' · '));
+}
+vm.runInContext('data=fixture',context);
+context.weightBout={...blank.find(b=>b.code==='A01'),category:'12 - 14 JUNIOR FLIGHT MIDDLE'};
+for(const expression of ['card(weightBout)','scheduleRow(weightBout)','adminBoutCard(weightBout)']) {
+ const html=vm.runInContext(expression,context);
+ for(const text of ['12 - 14 JUNIOR FLIGHT MIDDLE','Cadet · 12 - 14','Female','LIGHT MIDDLE · -51 kg','Semifinal'])assert(html.includes(text),expression+': '+text);
+}
+for (const event of ['POOMSAE PK','POOMSAE PRO']) {
+ context.weightBout={event,category:'12 - 14 JUNIOR FLIGHT MIDDLE'};
+ assert.equal(vm.runInContext('categoryDetails(weightBout)',context),'');
+}
+console.log('PASS: all 81 Kyorugi categories have reference kg labels; age/gender limits and Heavy thresholds match; existing labels and Poomsae are preserved.');

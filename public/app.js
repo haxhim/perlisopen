@@ -50,6 +50,24 @@ const roundName = stage => stageText[stage] || (Number.isInteger(stage) && stage
 const roundLabel = bout => bout.extra ? 'Qualifying' : roundName(bout.stage);
 const roundBadge = bout => `<span class="round-badge" aria-label="Competition round">${escapeHtml(roundLabel(bout))}</span>`;
 const formattedEvent = name => track[name] || name;
+// TM WAYCHAMP Competition Settings (Organiser): weight limits by age and gender.
+const kyorugiWeightLimits = {
+  '9 - 11': {
+    classes:['FIN','FLY','BANTAM','FEATHER','LIGHT','WELTER','MIDDLE','HEAVY'],
+    M:['-20','-23','-26','-29','-32','-36','-40','>40'],
+    F:['-18','-21','-24','-27','-30','-34','-38','>38'],
+  },
+  '12 - 14': {
+    classes:['FIN','FLY','BANTAM','FEATHER','LIGHT','WELTER','LIGHT MIDDLE','MIDDLE','LIGHT HEAVY','HEAVY'],
+    M:['-33','-37','-41','-45','-49','-53','-57','-61','-65','>65'],
+    F:['-29','-33','-37','-41','-44','-47','-51','-55','-59','>59'],
+  },
+  '15 - 17': {
+    classes:['FIN','FLY','BANTAM','FEATHER','LIGHT','WELTER','LIGHT MIDDLE','MIDDLE','LIGHT HEAVY','HEAVY'],
+    M:['-45','-48','-51','-55','-59','-63','-68','-73','-78','>78'],
+    F:['-42','-44','-46','-49','-52','-55','-59','-63','-68','>68'],
+  },
+};
 // Keep the source class text; Perlis age divisions follow the organizer's rules.
 function kyorugiCategoryDetails(b) {
   if (b.event !== 'KYORUGI') return [];
@@ -57,7 +75,10 @@ function kyorugiCategoryDetails(b) {
   if (!match) return [];
   const age = match[1].replace(/\s*-\s*/g,' - ');
   const division = {'9 - 11':'Super Cadet','12 - 14':'Cadet','15 - 17':'Junior'}[age];
-  return [division ? `${division} · ${age}` : age,match[2] === 'M' ? 'Male' : 'Female',match[3]];
+  const weights = kyorugiWeightLimits[age];
+  const weightIndex = weights?.classes.indexOf(match[3].trim().toUpperCase()) ?? -1;
+  const limit = weightIndex >= 0 ? weights[match[2].toUpperCase()][weightIndex] : null;
+  return [division ? `${division} · ${age}` : age,match[2] === 'M' ? 'Male' : 'Female',match[3] + (limit ? ` · ${limit} kg` : '')];
 }
 const categoryDetails = b => {
   const details = kyorugiCategoryDetails(b);
