@@ -1,0 +1,27 @@
+{
+  "kyorugi": {
+    "entries": 404,
+    "categories": 81,
+    "teams": 28,
+    "recovered_names": 26,
+    "truncated_names": 101
+  },
+  "poomsae": {
+    "F": {
+      "entries": 207,
+      "categories": 59,
+      "tm_entries": 207
+    },
+    "G": {
+      "entries": 130,
+      "categories": 35,
+      "tm_entries": 227
+    },
+    "scored": {
+      "entries": 97,
+      "categories": 30,
+      "performance_groups": 32
+    }
+  },
+  "total_entries": 838
+}

@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: perlis
+      POSTGRES_USER: perlis
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a strong POSTGRES_PASSWORD in Dokploy}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      default:
+        aliases:
+          - perlis-mtkd-2026-db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U perlis -d perlis"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  perlis:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3000"
+      PGHOST: perlis-mtkd-2026-db
+      PGPORT: "5432"
+      PGUSER: perlis
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set a strong POSTGRES_PASSWORD in Dokploy}
+      PGDATABASE: perlis
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set a strong ADMIN_PASSWORD in Dokploy}
+    networks:
+      - default
+      - dokploy-network
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${PERLIS_DB_SUBNET:-10.254.205.0/24}
+  dokploy-network:
+    external: true

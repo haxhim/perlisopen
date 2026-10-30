@@ -1,0 +1,16 @@
+# Local preview only. Dokploy uses compose.yaml without this override.
+services:
+  perlis:
+    environment:
+      PGHOST: db
+    ports:
+      - "127.0.0.1:3005:3000"
+
+networks:
+  default:
+    name: perlis-preview-network
+    external: false
+    internal: false
+  dokploy-network:
+    name: perlis-preview-proxy-network
+    external: false

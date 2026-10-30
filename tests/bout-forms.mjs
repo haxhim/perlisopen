@@ -1,0 +1,8 @@
+import * as standings from '../public/standings.js';
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const source=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8').replace(/^import .*\n/,'').replace(/refresh\(\);\s*setInterval\(\(\) => refresh\(true\), 10000\);\s*$/,'');
+const button={disabled:false},form={querySelector:()=>button},modal={innerHTML:'',querySelector:()=>({})};let payload,refreshed=false;
+const context=vm.createContext({...standings,calculateStandings:standings.teamStandings,document:{querySelector:s=>s==='#modal-root'?modal:form},location:{pathname:'/admin/bouts',search:''},URLSearchParams,sessionStorage:{getItem:()=>''},FormData:class{get(k){return k==='winner'?'blue':'correction';}},fixture:{version:1,bouts:[{id:'test',code:'I54',assignedRing:'I',event:'POOMSAE CARNIVAL',category:'Test',stage:1,blueId:'blue',redId:'red',revision:'opened-revision'}],athletes:[]},capture:body=>{payload=JSON.parse(body);},didRefresh:()=>{refreshed=true;}});
+vm.runInContext(source,context);vm.runInContext('data=fixture;api=async (path,opts)=>{capture(opts.body)};refresh=async()=>didRefresh();',context);
+for(const kind of ['result','undo']){vm.runInContext(`${kind}Modal('test')`,context);assert(modal.innerHTML.includes('type="submit"'));vm.runInContext('data={...data,version:99,bouts:[]}',context);await form.onsubmit({preventDefault(){},target:form});assert.equal(payload.boutRevision,'opened-revision');assert.equal(button.disabled,false);assert(refreshed);vm.runInContext('data=fixture',context);}
+console.log('PASS: result and undo forms submit their captured bout revision, refresh on success, and re-enable save buttons.');
