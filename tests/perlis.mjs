@@ -42,7 +42,7 @@ vm.runInContext("transferMode='bouts';transferSourceRing='G';transferPrefix='G'"
 vm.runInContext("transferMode='scored'",context);assert(!vm.runInContext('transferEntries()',context).some(b=>b.event==='POOMSAE PK'));
 // Age bands derive from numbers, regardless of the source's JUNIOR/SENIOR labels.
 for(const [category,expected] of [['9 - 11 JUNIOR FFLY','SUPER_CADET'],['12–14 / Male / TAEGEUK 1','CADET'],['PAIR / 15 - 17','JUNIOR'],['BELOW 8 / MALE / TAEGEUK 1',null]])assert.equal(standings.ageGroup(category),expected);
-assert.equal(standings.tallyPresets.length,8);
+assert.equal(standings.tallyPresets.length,9);
 const source={...fixture,athletes:[],awards:[]};let sequence=0;
 function add(event,category,team,medal='Gold',finished=true){const id='a'+(++sequence);source.athletes.push({id,team});source.awards.push({day:1,event,category,finished,medals:[{athleteId:id,medal}]});}
 for(const event of ['KYORUGI','POOMSAE PK','POOMSAE PRO'])for(const age of ['9 - 11','12 - 14','15 - 17'])for(const gender of ['M','F']){
@@ -52,11 +52,23 @@ for(const event of ['KYORUGI','POOMSAE PK','POOMSAE PRO'])for(const age of ['9 -
 add('POOMSAE PRO','PAIR / 12 - 14','Pair Club','Silver');
 add('POOMSAE PRO','BELOW 8 / MALE / TAEGEUK 1','Young Club');
 add('KYORUGI','9 - 11 JUNIOR MFIN','Unfinished','Gold',false);
-for(const preset of standings.tallyPresets){const ranked=standings.teamStandings(preset,'ALL',source);assert.equal(ranked[0].team,'Club 1');assert.equal(ranked[0].trophy,'Champion');assert.equal(ranked[2].trophy,'2nd Runner Up');assert(!ranked.some(r=>r.team==='Unfinished'));assert.equal(ranked.some(r=>r.team==='Young Club'),false);assert.equal(ranked.some(r=>r.team==='Pair Club'),preset.id==='POOMSAE_CADET'||preset.id==='POOMSAE_ALL');}
+for(const preset of standings.tallyPresets){const ranked=standings.teamStandings(preset,'ALL',source);assert.equal(ranked[0].team,'Club 1');assert.equal(ranked[0].trophy,'Champion');assert.equal(ranked[2].trophy,'2nd Runner Up');assert(!ranked.some(r=>r.team==='Unfinished'));assert.equal(ranked.some(r=>r.team==='Young Club'),false);assert.equal(ranked.some(r=>r.team==='Pair Club'),preset.id==='POOMSAE_CADET'||preset.id==='POOMSAE_ALL'||preset.id==='COMBINED_ALL');}
 const genderPreset=standings.tallyPresets[0];assert.equal(standings.teamStandings(genderPreset,'M',source)[0].gold,5);assert.equal(standings.teamStandings(genderPreset,'ALL',source)[0].gold,10);
 const pPreset=standings.tallyPresets.find(p=>p.id==='POOMSAE_SUPER_CADET');assert.equal(standings.teamStandings(pPreset,'ALL',source)[0].gold,20);
+const combinedPreset=standings.tallyPresets.find(p=>p.id==='COMBINED_ALL');
+const combinedRows=standings.teamStandings(combinedPreset,'ALL',source);
+assert.equal(combinedRows[0].gold,90);
+for(const row of combinedRows){
+ const separated=['KYORUGI_ALL','POOMSAE_ALL'].map(id=>standings.teamStandings(standings.tallyPresets.find(p=>p.id===id),'ALL',source).find(r=>r.team===row.team));
+ for(const medal of ['gold','silver','bronze'])assert.equal(row[medal],separated.reduce((n,r)=>n+(r?.[medal]||0),0));
+}
+assert(combinedRows.some(r=>r.team==='Pair Club'));
+assert(!combinedRows.some(r=>r.team==='Young Club'));
+assert.equal(standings.teamStandings(combinedPreset,'M',source)[0].gold,45);
+assert.equal(standings.teamStandings(combinedPreset,'F',source)[0].gold,45);
+assert(!standings.tallyAwardMatches({day:1,event:'VIRTUAL',category:'12 - 14 MFIN',finished:true,medals:[{}]},combinedPreset));
 const tieSource={athletes:[{id:'a',team:'Z Club'},{id:'b',team:'A Club'}],awards:['a','b'].map(id=>({day:1,event:'KYORUGI',category:'9 - 11 JUNIOR MFIN',finished:true,medals:[{athleteId:id,medal:'Gold'}]}))};assert(standings.teamStandings(genderPreset,'ALL',tieSource).every(r=>r.rank===1&&r.tied));
-context.source=source;vm.runInContext('data=source;tallyGender="ALL"',context);const report=vm.runInContext('overallReportSnapshot()',context);assert.equal(report.groups.length,8);
+context.source=source;vm.runInContext('data=source;tallyGender="ALL"',context);const report=vm.runInContext('overallReportSnapshot()',context);assert.equal(report.groups.length,9);
 assert.equal(report.totalCategories,source.awards.filter(a=>a.day===1&&!standings.isBelowEight(a.category)).length);
 assert(!report.groups.flatMap(g=>g.sections.flatMap(s=>s.rows)).some(r=>r.team==='Young Club'));
 assert(source.awards.some(a=>standings.isBelowEight(a.category)&&a.finished),'Below 8 category results remain available');
@@ -64,10 +76,10 @@ for(const gender of ['ALL','M','F']){
  const preset=standings.tallyPresets.find(p=>p.id==='POOMSAE_ALL');
  assert(!standings.tallyAwardMatches({day:1,event:'POOMSAE PRO',category:'BELOW 8 / MALE / TAEGEUK 1',finished:true,medals:[{}]},preset,gender));
 }
-const pdf=createOverallPdf(report,jsPDF);assert.equal(pdf.getNumberOfPages(),8);const text=pdf.internal.pages.flat().join('\n');assert(text.includes('Champion - Trophy'));assert(text.includes('2nd Runner Up - Trophy'));assert(!text.includes('Young Club'));assert(!text.includes('Club 4'));assert(!text.includes('Club 5'));
+const pdf=createOverallPdf(report,jsPDF);assert.equal(pdf.getNumberOfPages(),9);const text=pdf.internal.pages.flat().join('\n');assert(text.includes('Overall Kyorugi + Poomsae'));assert(text.includes('Champion - Trophy'));assert(text.includes('2nd Runner Up - Trophy'));assert(!text.includes('Young Club'));assert(!text.includes('Club 4'));assert(!text.includes('Club 5'));
 assert(vm.runInContext('teamTallyView()',context).includes('Club 5'));
 fs.mkdirSync(new URL('../tmp/pdfs/',import.meta.url),{recursive:true});pdf.save(fileURLToPath(new URL('../tmp/pdfs/overall-awards-test.pdf',import.meta.url)));
-console.log('PASS: 838 entries; all 175 elimination brackets can finish; 30 scored categories; mixed ring G routing; eight award groups; both Poomsae formats, pairs and teams; gender filters, shared ranks, and eight-page trophy PDF.');
+console.log('PASS: 838 entries; all 175 elimination brackets can finish; 30 scored categories; mixed ring G routing; nine award groups; both Poomsae formats, pairs and teams; gender filters, shared ranks, and nine-page trophy PDF.');
 
 // Weight labels add the supplied kg limit while retaining the original division,
 // gender, class, raw category and round labels on every existing bout surface.
@@ -105,3 +117,5 @@ for (const event of ['POOMSAE PK','POOMSAE PRO']) {
 console.log('PASS: all 81 Kyorugi categories have reference kg labels; age/gender limits and Heavy thresholds match; existing labels and Poomsae are preserved.');
 
 console.log('PASS: Below 8 medals excluded from overall screen/PDF standings and report counts; individual results remain available.');
+
+console.log('PASS: combined overall equals Kyorugi plus both Poomsae formats, includes pairs/teams, excludes Below 8 and other events, and appears in the nine-group PDF.');

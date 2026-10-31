@@ -6,7 +6,7 @@ export const ageGroups = [
 export const tallyPresets = [['KYORUGI','Kyorugi'],['POOMSAE','Poomsae']].flatMap(([event,label]) => [
   ...ageGroups.map(age => ({id:`${event}_${age.id}`,event,age:age.id,label:`${label} · ${age.label}`})),
   {id:`${event}_ALL`,event,age:'ALL',label:`Overall ${label}`},
-]);
+]).concat({id:'COMBINED_ALL',event:'ALL',age:'ALL',label:'Overall Kyorugi + Poomsae'});
 export const trophyTitles = ['Champion','1st Runner Up','2nd Runner Up'];
 export const isBelowEight = category => /^\s*BELOW\s*8\b/i.test(String(category));
 export function ageGroup(category) {
@@ -17,7 +17,7 @@ export function ageGroup(category) {
 export function tallyAwardMatches(award,preset,gender='ALL') {
   if (!award.finished || !award.medals.length || award.day !== 1 || isBelowEight(award.category)) return false;
   const discipline = award.event === 'KYORUGI' ? 'KYORUGI' : /^POOMSAE(?:\s|$)/.test(award.event) ? 'POOMSAE' : null;
-  if (discipline !== preset.event || preset.age !== 'ALL' && ageGroup(award.category) !== preset.age) return false;
+  if (!discipline || preset.event !== 'ALL' && discipline !== preset.event || preset.age !== 'ALL' && ageGroup(award.category) !== preset.age) return false;
   if (gender === 'ALL') return true;
   const category = String(award.category).toUpperCase();
   const match = category.match(/^\d+\s*[-–—]\s*\d+\s+(?:JUNIOR|SENIOR)\s+([MF])/) || category.match(/(?:^|\/\s*)(MALE|FEMALE)(?: TEAM)?\s*\//);

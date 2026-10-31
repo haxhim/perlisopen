@@ -35,12 +35,13 @@ Scored entry IDs are internal and separate from their original performance numbe
 
 ## Overall awards
 
-Results provides eight groups, with combined genders determining trophies:
+Results provides nine groups, with combined genders determining trophies:
 
 - Kyorugi: Super Cadet (9–11), Cadet (12–14), Junior (15–17), and Overall Kyorugi.
 - Poomsae: Super Cadet (9–11), Cadet (12–14), Junior (15–17), and Overall Poomsae.
+- Overall Kyorugi + Poomsae: combines all eligible medals from both events, excluding Below 8.
 
-Each group identifies **Champion · Trophy**, **1st Runner Up · Trophy**, and **2nd Runner Up · Trophy**. All positions remain visible. PDF export includes all eight groups and the top three trophy positions.
+Each group identifies **Champion · Trophy**, **1st Runner Up · Trophy**, and **2nd Runner Up · Trophy**. All positions remain visible. PDF export includes all nine groups and the top three trophy positions.
 
 Ranking uses gold, then silver, then bronze, following the existing systems. Identical medal totals share a rank and are marked Joint; team name only orders tied rows for display. Standings update from completed categories and remain live until competition finishes. Poomsae totals combine knockout and scored medals, including pairs/teams. Age-specific trophies use only their specified age band. Below 8 Poomsae is excluded from overall trophies and the overall PDF; its individual category results and awards remain available. Gender filters are medal-analysis views; trophy labels and PDF use combined genders. Team names are compared without case or punctuation, while branches such as Central Perlis (Muslim) and Central Perlis (Mohd Khair) remain separate.
 
@@ -57,5 +58,5 @@ npm test
 python3 import_perlis_pdfs.py  # requires PyMuPDF
 ```
 
-The importer rebuilds CSVs and the fresh-install SQL seed only; it does not overwrite live PostgreSQL results. The test suite completes every elimination bracket, checks placing validation and participant identity, transfers, awards, mixed Ring G views, age/event isolation, combined Poomsae medals and the eight-page trophy PDF. Tests use in-memory fixtures and do not write live competition results.
+The importer rebuilds CSVs and the fresh-install SQL seed only; it does not overwrite live PostgreSQL results. The test suite completes every elimination bracket, checks placing validation and participant identity, transfers, awards, mixed Ring G views, age/event isolation, combined Poomsae medals and the nine-page trophy PDF. Tests use in-memory fixtures and do not write live competition results.
 # perlisopen
