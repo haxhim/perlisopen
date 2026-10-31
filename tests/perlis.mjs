@@ -52,12 +52,19 @@ for(const event of ['KYORUGI','POOMSAE PK','POOMSAE PRO'])for(const age of ['9 -
 add('POOMSAE PRO','PAIR / 12 - 14','Pair Club','Silver');
 add('POOMSAE PRO','BELOW 8 / MALE / TAEGEUK 1','Young Club');
 add('KYORUGI','9 - 11 JUNIOR MFIN','Unfinished','Gold',false);
-for(const preset of standings.tallyPresets){const ranked=standings.teamStandings(preset,'ALL',source);assert.equal(ranked[0].team,'Club 1');assert.equal(ranked[0].trophy,'Champion');assert.equal(ranked[2].trophy,'2nd Runner Up');assert(!ranked.some(r=>r.team==='Unfinished'));assert.equal(ranked.some(r=>r.team==='Young Club'),preset.id==='POOMSAE_ALL');assert.equal(ranked.some(r=>r.team==='Pair Club'),preset.id==='POOMSAE_CADET'||preset.id==='POOMSAE_ALL');}
+for(const preset of standings.tallyPresets){const ranked=standings.teamStandings(preset,'ALL',source);assert.equal(ranked[0].team,'Club 1');assert.equal(ranked[0].trophy,'Champion');assert.equal(ranked[2].trophy,'2nd Runner Up');assert(!ranked.some(r=>r.team==='Unfinished'));assert.equal(ranked.some(r=>r.team==='Young Club'),false);assert.equal(ranked.some(r=>r.team==='Pair Club'),preset.id==='POOMSAE_CADET'||preset.id==='POOMSAE_ALL');}
 const genderPreset=standings.tallyPresets[0];assert.equal(standings.teamStandings(genderPreset,'M',source)[0].gold,5);assert.equal(standings.teamStandings(genderPreset,'ALL',source)[0].gold,10);
 const pPreset=standings.tallyPresets.find(p=>p.id==='POOMSAE_SUPER_CADET');assert.equal(standings.teamStandings(pPreset,'ALL',source)[0].gold,20);
 const tieSource={athletes:[{id:'a',team:'Z Club'},{id:'b',team:'A Club'}],awards:['a','b'].map(id=>({day:1,event:'KYORUGI',category:'9 - 11 JUNIOR MFIN',finished:true,medals:[{athleteId:id,medal:'Gold'}]}))};assert(standings.teamStandings(genderPreset,'ALL',tieSource).every(r=>r.rank===1&&r.tied));
 context.source=source;vm.runInContext('data=source;tallyGender="ALL"',context);const report=vm.runInContext('overallReportSnapshot()',context);assert.equal(report.groups.length,8);
-const pdf=createOverallPdf(report,jsPDF);assert.equal(pdf.getNumberOfPages(),8);const text=pdf.internal.pages.flat().join('\n');assert(text.includes('Champion - Trophy'));assert(text.includes('2nd Runner Up - Trophy'));assert(!text.includes('Club 4'));assert(!text.includes('Club 5'));
+assert.equal(report.totalCategories,source.awards.filter(a=>a.day===1&&!standings.isBelowEight(a.category)).length);
+assert(!report.groups.flatMap(g=>g.sections.flatMap(s=>s.rows)).some(r=>r.team==='Young Club'));
+assert(source.awards.some(a=>standings.isBelowEight(a.category)&&a.finished),'Below 8 category results remain available');
+for(const gender of ['ALL','M','F']){
+ const preset=standings.tallyPresets.find(p=>p.id==='POOMSAE_ALL');
+ assert(!standings.tallyAwardMatches({day:1,event:'POOMSAE PRO',category:'BELOW 8 / MALE / TAEGEUK 1',finished:true,medals:[{}]},preset,gender));
+}
+const pdf=createOverallPdf(report,jsPDF);assert.equal(pdf.getNumberOfPages(),8);const text=pdf.internal.pages.flat().join('\n');assert(text.includes('Champion - Trophy'));assert(text.includes('2nd Runner Up - Trophy'));assert(!text.includes('Young Club'));assert(!text.includes('Club 4'));assert(!text.includes('Club 5'));
 assert(vm.runInContext('teamTallyView()',context).includes('Club 5'));
 fs.mkdirSync(new URL('../tmp/pdfs/',import.meta.url),{recursive:true});pdf.save(fileURLToPath(new URL('../tmp/pdfs/overall-awards-test.pdf',import.meta.url)));
 console.log('PASS: 838 entries; all 175 elimination brackets can finish; 30 scored categories; mixed ring G routing; eight award groups; both Poomsae formats, pairs and teams; gender filters, shared ranks, and eight-page trophy PDF.');
@@ -96,3 +103,5 @@ for (const event of ['POOMSAE PK','POOMSAE PRO']) {
  assert.equal(vm.runInContext('categoryDetails(weightBout)',context),'');
 }
 console.log('PASS: all 81 Kyorugi categories have reference kg labels; age/gender limits and Heavy thresholds match; existing labels and Poomsae are preserved.');
+
+console.log('PASS: Below 8 medals excluded from overall screen/PDF standings and report counts; individual results remain available.');

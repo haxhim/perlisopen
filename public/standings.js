@@ -8,13 +8,14 @@ export const tallyPresets = [['KYORUGI','Kyorugi'],['POOMSAE','Poomsae']].flatMa
   {id:`${event}_ALL`,event,age:'ALL',label:`Overall ${label}`},
 ]);
 export const trophyTitles = ['Champion','1st Runner Up','2nd Runner Up'];
+export const isBelowEight = category => /^\s*BELOW\s*8\b/i.test(String(category));
 export function ageGroup(category) {
   const range = String(category).match(/(?:^|[^0-9])(\d{1,2})\s*[-–—]\s*(\d{1,2})(?![0-9])/);
   if (!range) return null;
   return ageGroups.find(g => Number(range[1]) >= g.low && Number(range[2]) <= g.high)?.id || null;
 }
 export function tallyAwardMatches(award,preset,gender='ALL') {
-  if (!award.finished || !award.medals.length || award.day !== 1) return false;
+  if (!award.finished || !award.medals.length || award.day !== 1 || isBelowEight(award.category)) return false;
   const discipline = award.event === 'KYORUGI' ? 'KYORUGI' : /^POOMSAE(?:\s|$)/.test(award.event) ? 'POOMSAE' : null;
   if (discipline !== preset.event || preset.age !== 'ALL' && ageGroup(award.category) !== preset.age) return false;
   if (gender === 'ALL') return true;

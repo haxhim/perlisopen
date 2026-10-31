@@ -1,4 +1,4 @@
-import {tallyPresets,ageGroup,trophyTitles,tallyAwardMatches,teamStandings as calculateStandings} from '/standings.js';
+import {tallyPresets,ageGroup,isBelowEight,trophyTitles,tallyAwardMatches,teamStandings as calculateStandings} from '/standings.js';
 const root = document.querySelector('#app');
 const isAdminPage = /^\/admin(?:\.html|\/(?:bouts|awards(?:\/history)?|transfer|qualifying|staff-pins|poomsae-pro|tournament|template-guide))?\/?$/.test(location.pathname);
 const publicPage = { '/':'live', '/live':'live', '/live.html':'live', '/schedule':'schedule', '/schedule.html':'schedule', '/brackets':'brackets', '/brackets.html':'brackets', '/teams':'teams', '/teams.html':'teams', '/results':'results', '/results.html':'results', '/awards':'awards', '/awards.html':'awards', '/awards/history':'awardsHistory', '/awards-history.html':'awardsHistory' };
@@ -359,11 +359,12 @@ const resultsEventMatches = (award, selectedEvent) => selectedEvent === 'ALL' ||
 const resultsAgeMatches = award => view !== 'results' || tallyAge === 'ALL' || ageGroup(award.category) === tallyAge;
 function teamStandings(preset,gender = tallyGender,source = data) { return calculateStandings(preset,gender,source); }
 function overallReportSnapshot(source = data) {
+  const eligibleAwards = source.awards.filter(a => a.day === 1 && !isBelowEight(a.category));
   return {
     event:{ ...source.event, dates:[...source.event.dates] }, version:source.version,
     generatedAt:new Date().toISOString(),
-    completedCategories:source.awards.filter(a => a.day === 1 && a.finished && a.medals.length).length,
-    totalCategories:source.awards.filter(a => a.day === 1).length,
+    completedCategories:eligibleAwards.filter(a => a.finished && a.medals.length).length,
+    totalCategories:eligibleAwards.length,
     groups:tallyPresets.map(preset => ({ title:preset.label,
       sections:[['ALL','Combined']].map(([gender,label]) => ({
         gender, label, rows:teamStandings(preset,gender,source).map(row => ({ ...row })),
@@ -400,7 +401,7 @@ async function exportOverallPdf() {
 function teamTallyView() {
   const preset = tallyPresets.find(p => p.id === tallyPreset) || tallyPresets[0];
   const standings = teamStandings(preset);
-  return `<section class="tally-panel"><div class="tally-intro"><div><p class="eyebrow">Official standings · Day 1</p><h2>Overall awards</h2><p>Super Cadet: 9–11 · Cadet: 12–14 · Junior: 15–17. Champion, 1st Runner Up and 2nd Runner Up receive trophies in each group. Overall event standings include all ages.</p></div><div class="tally-export"><button id="export-overall-pdf" class="secondary-link" ${pdfExportPending ? 'disabled aria-busy="true"' : ''}>${pdfExportPending ? 'Preparing PDF...' : 'Export awards (PDF)'}</button><small>All 8 groups · Top 3 trophy positions · Combined medals</small><p class="tally-export-error" role="alert">${escapeHtml(pdfExportError)}</p></div></div>
+  return `<section class="tally-panel"><div class="tally-intro"><div><p class="eyebrow">Official standings · Day 1</p><h2>Overall awards</h2><p>Super Cadet: 9–11 · Cadet: 12–14 · Junior: 15–17. Champion, 1st Runner Up and 2nd Runner Up receive trophies in each group. Overall standings exclude Below 8 categories.</p></div><div class="tally-export"><button id="export-overall-pdf" class="secondary-link" ${pdfExportPending ? 'disabled aria-busy="true"' : ''}>${pdfExportPending ? 'Preparing PDF...' : 'Export awards (PDF)'}</button><small>All 8 groups · Top 3 trophy positions · Combined medals</small><p class="tally-export-error" role="alert">${escapeHtml(pdfExportError)}</p></div></div>
     <div class="tally-preset-field"><label for="tally-preset">Overall award group</label><select id="tally-preset">${tallyPresets.map(p => `<option value="${p.id}" ${p.id === preset.id ? 'selected' : ''}>${escapeHtml(p.label)}</option>`).join('')}</select></div>
     <div class="tally-preset-field"><label for="tally-gender">View medals by gender</label><select id="tally-gender">${[['ALL','Combined'],['M','Male'],['F','Female']].map(([id,name]) => `<option value="${id}" ${id === tallyGender ? 'selected' : ''}>${name}</option>`).join('')}</select></div>
     <p class="tally-note">Ranked by gold, silver, then bronze · Day 1 · ${escapeHtml(preset.label)} · ${tallyGender === 'M' ? 'Male' : tallyGender === 'F' ? 'Female' : 'Combined'}.</p>

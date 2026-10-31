@@ -42,7 +42,7 @@ Results provides eight groups, with combined genders determining trophies:
 
 Each group identifies **Champion · Trophy**, **1st Runner Up · Trophy**, and **2nd Runner Up · Trophy**. All positions remain visible. PDF export includes all eight groups and the top three trophy positions.
 
-Ranking uses gold, then silver, then bronze, following the existing systems. Identical medal totals share a rank and are marked Joint; team name only orders tied rows for display. Standings update from completed categories and remain live until competition finishes. Poomsae totals combine knockout and scored medals, including pairs/teams. Age-specific trophies use only their specified age band. Overall event trophies include all ages, including Below 8 Poomsae. Gender filters are medal-analysis views; trophy labels and PDF use combined genders. Team names are compared without case or punctuation, while branches such as Central Perlis (Muslim) and Central Perlis (Mohd Khair) remain separate.
+Ranking uses gold, then silver, then bronze, following the existing systems. Identical medal totals share a rank and are marked Joint; team name only orders tied rows for display. Standings update from completed categories and remain live until competition finishes. Poomsae totals combine knockout and scored medals, including pairs/teams. Age-specific trophies use only their specified age band. Below 8 Poomsae is excluded from overall trophies and the overall PDF; its individual category results and awards remain available. Gender filters are medal-analysis views; trophy labels and PDF use combined genders. Team names are compared without case or punctuation, while branches such as Central Perlis (Muslim) and Central Perlis (Mohd Khair) remain separate.
 
 ## Retained operations
 
