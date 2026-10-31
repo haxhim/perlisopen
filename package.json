@@ -8,7 +8,7 @@
     "dev": "node --watch server.mjs",
     "check": "node --check server.mjs && node --check public/app.js && node --check public/overall-pdf.js && node --check scripts/add-empty-categories.mjs && node --check scripts/transfer-poomsae.mjs && node --check public/standings.js",
     "seed:snapshot": "node scripts/snapshot-seed.mjs",
-    "test": "node tests/perlis.mjs && node tests/bout-forms.mjs && node tests/empty-categories.mjs && node tests/poomsae-transfer.mjs"
+    "test": "node tests/perlis.mjs && node tests/bout-forms.mjs && node tests/empty-categories.mjs && node tests/poomsae-transfer.mjs && node tests/poomsae-placings.mjs"
   },
   "engines": {
     "node": ">=20"

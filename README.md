@@ -25,9 +25,9 @@ Use `ADMIN_PASSWORD` from this directory's private `.env` file. Select any ring 
 
 Total: **838 competition entries**, **566 scheduled contests** and **3 automatic BYE records** (569 bracket records in the interface). Pair/team entries count as one entry, with all member names preserved. The 32 scored performance numbers contain 30 medal categories because pair/team performances in the same age division share a category. The importer checks team-manager totals, entries, category counts, draw names and bout routes. Kyorugi names are recovered from the matching draw where a full name is available; 101 remain shortened in the supplied sources. Original source JUNIOR/SENIOR category text stays intact; displayed age divisions and overall awards follow the organizer's 9–11 / 12–14 / 15–17 rules.
 
-## Ring G: simultaneous scores, then knockouts
+## Ring G: group placings, then knockouts
 
-**G001–G032 are scored performances.** The live card shows every participant in the current performance together. Under Poomsae scores, enter all scores (0–10) in the category and click **Save all scores** once. The server validates every score before changing any result, saves the whole group together, marks the participants performed, calculates highest-score-first placings and advances the public performance queue. Equal scores require referee-confirmed placings in the tie-break fields. Manual referee placings remain available for corrections.
+**G001–G032 perform in groups.** The live card shows every participant in the current performance together. Under Poomsae placings, choose the referee-confirmed placing for each participant, then click **Save placings** once. The selected placing is saved against the participant’s unique entry code; rows stay in performance order after saving and refreshing. Placings 3 and 4 receive bronze. No score is required or displayed, and the retired score endpoint cannot overwrite the referee’s placings. Existing results remain stored; incorrect earlier placings can be corrected through the same form.
 
 **G033 onward uses knockout bouts, exactly like Kyorugi.** Record a blue/red winner through Bout queue; winners advance to semifinals/finals. The Live page shows scored G performances first, then switches to G033 when the scored performance queue is complete. Schedule and Brackets show scored groups before knockouts. Ring F is entirely knockout Poomsae. Three single-entry F categories advance automatically as printed BYEs.
 
@@ -57,5 +57,5 @@ npm test
 python3 import_perlis_pdfs.py  # requires PyMuPDF
 ```
 
-The importer rebuilds CSVs and the fresh-install SQL seed only; it does not overwrite live PostgreSQL results. The test suite completes every elimination bracket, checks score validation and ties, transfers, awards, mixed Ring G views, age/event isolation, combined Poomsae medals and the eight-page trophy PDF. Tests use in-memory fixtures and do not write live competition results.
+The importer rebuilds CSVs and the fresh-install SQL seed only; it does not overwrite live PostgreSQL results. The test suite completes every elimination bracket, checks placing validation and participant identity, transfers, awards, mixed Ring G views, age/event isolation, combined Poomsae medals and the eight-page trophy PDF. Tests use in-memory fixtures and do not write live competition results.
 # perlisopen

@@ -310,23 +310,6 @@ export function validatePoomsaePlacements(group, placements) {
   if (ranks.some(rank => rank > Math.min(4, group.entrants.length))) throw Error('Placing exceeds the number of entries');
   return updates;
 }
-export function validatePoomsaeScores(group, scores) {
-  if (!Array.isArray(scores) || scores.length !== group.entrants.length || new Set(scores.map(e => e.code)).size !== scores.length || scores.some(e => !group.entrants.some(p => p.code === e.code)))
-    throw Error('Enter a score for every participant in this group');
-  const values = scores.map(e => {
-    if (e.score == null || String(e.score).trim() === '' || !Number.isFinite(Number(e.score)) || Number(e.score) < 0 || Number(e.score) > 10) throw Error('Enter each score from 0 to 10');
-    return {code:e.code,score:Number(e.score),rank:e.rank};
-  }).sort((a,b) => b.score-a.score);
-  const tied = new Set(values.map(e => e.score)).size !== values.length;
-  if (tied) {
-    const placings = validatePoomsaePlacements(group,values);
-    if (placings.some(([,rank]) => rank === null)) throw Error('Equal scores: enter the referee-confirmed placings for this group');
-    values.forEach(e => {e.rank = Number(e.rank);});
-    const ranked = [...values].sort((a,b) => a.rank-b.rank);
-    if (ranked.some((e,i) => i && e.score > ranked[i-1].score)) throw Error('A lower score cannot rank above a higher score');
-  } else values.forEach((e,i) => {e.rank = i < 4 ? i+1 : null;});
-  return values;
-}
 export function poomsaeScheduleFor(entries, saved = {}) {
   const valid = new Set(entries.map(e => e.competitor_no)), used = new Set(), schedule = {};
   for (const ring of ['E','F','G']) schedule[ring] = (saved[ring] || []).filter(code => {
@@ -378,14 +361,15 @@ export function buildPoomsaeState(entries, saved = {}, savedSchedule = {}) {
     const result = saved[row.competitor_no];
     groups.get(key).push({
       id:`1:POOMSAE PRO:${row.competitor_no}`, code:row.competitor_no, performanceNo:row.performance_no || null, ...positions.get(row.competitor_no),
-      name:row.name, team:row.team, score:result?.score ?? null, rank:result?.rank ?? null, performed:!!(result?.performed || result?.rank != null), performedAt:result?.performedAt || null,
+      name:row.name, team:row.team, rank:result?.rank ?? null, performed:!!(result?.performed || result?.rank != null), performedAt:result?.performedAt || null,
       recordedAt:result?.recordedAt || null,
     });
   }
   return [...groups].map(([key, entrants]) => {
     const [sourceRing,category] = JSON.parse(key);
     const ring = entrants[0].assignedRing;
-    const sorted = [...entrants].sort((a,b) => (a.rank ?? 99) - (b.rank ?? 99) || a.code.localeCompare(b.code, undefined, { numeric:true }));
+    // Keep each referee row on the same athlete after saving or refreshing.
+    const sorted = [...entrants].sort((a,b) => a.scheduleOrder-b.scheduleOrder || a.code.localeCompare(b.code, undefined, { numeric:true }));
     const finished = Array.from({length:Math.min(4,entrants.length)},(_,i) => i+1).every(rank => entrants.some(e => e.rank === rank));
     return { id:JSON.stringify([1,'POOMSAE PRO',sourceRing,category]), day:1, event:'POOMSAE PRO',
       ring, sourceRing, scheduleOrder:Math.min(...entrants.map(e => e.scheduleOrder)), category, entrants:sorted, finished,
@@ -428,7 +412,7 @@ export function medalResultsCsv(data) {
 export function buildPoomsaeAwards(groups, stored = {}) {
   return groups.map(group => {
     const saved = stored[group.id] || {};
-    const medals = group.finished ? group.entrants.filter(e => e.rank !== null && e.rank <= 4).map(e => ({
+    const medals = group.finished ? group.entrants.filter(e => e.rank !== null && e.rank <= 4).sort((a,b) => a.rank-b.rank).map(e => ({
       athleteId:e.id, medal:e.rank === 1 ? 'Gold' : e.rank === 2 ? 'Silver' : 'Bronze',
       state:saved.medalists?.[e.id]?.state || 'PENDING',
       updatedAt:saved.medalists?.[e.id]?.updatedAt || null,
@@ -655,20 +639,7 @@ async function handleRequest(req, res) {
         return json(res, 200, { ok:true, version:results.version });
       }
       if (req.method === 'POST' && url.pathname === '/api/admin/poomsae-scores') {
-        if (!['admin','coordinator'].includes(auth.role)) return error(res,403,'Poomsae results access required');
-        const body = await readBody(req);
-        if (Number(body.version) !== results.version) return error(res,409,'Competition changed. Refresh and try again.');
-        const group = buildPoomsaeState(allPoomsaeRows(),results.poomsae,results.poomsaeSchedule).find(g => g.category === body.category && g.ring === body.ring);
-        if (!group) return error(res,404,'Poomsae category not found');
-        if (auth.role === 'coordinator' && auth.ring !== group.ring) return error(res,403,'Access is limited to your assigned ring');
-        let updates;
-        try { updates = validatePoomsaeScores(group,body.scores); } catch (err) { return error(res,400,err.message); }
-        const recordedAt = new Date().toISOString();
-        for (const {code,score,rank} of updates) results.poomsae[code] = {...results.poomsae[code],score,rank,performed:true,performedAt:results.poomsae[code]?.performedAt || recordedAt,recordedAt};
-        delete results.awards[group.id];
-        results.audit.push({action:'POOMSAE_GROUP_SCORES',category:group.category,scores:updates,recordedAt});
-        results.version++; await save();
-        return json(res,200,{ok:true,version:results.version});
+        return error(res,410,'Score entry has been removed. Refresh and save referee placings.');
       }
       if (req.method === 'POST' && url.pathname === '/api/admin/poomsae-placements') {
         if (!['admin','coordinator'].includes(auth.role)) return error(res, 403, 'Poomsae results access required');
